@@ -3,15 +3,13 @@ import fs from 'fs';
 import { execSync } from 'child_process';
 import toml from '@iarna/toml';
 import { waitFor } from 'xstate';
-import { apiToPromptMachine } from '../../../../lib/prompt-to-api-state-machine';
+import { apiToPromptMachine } from '../../lib/prompt-to-api-state-machine';
 import { createActor } from 'xstate';
 
 // how to include files in the server bundle: https://github.com/vercel/next.js/discussions/70125
 export async function POST(request: NextRequest) {
   try {
     const { prompt, connectionString } = await request.json();
-
-    console.log(prompt, connectionString);
 
     if (!prompt || !connectionString) {
       return NextResponse.json(
@@ -34,17 +32,32 @@ export async function POST(request: NextRequest) {
 
     actor.start();
     actor.send({ type: 'start' });
-    const result = await waitFor(actor, (snapshot) =>
-      snapshot.matches('complete')
+    const result = await waitFor(
+      actor,
+      (snapshot) =>
+        snapshot.matches('complete') ||
+        snapshot.matches('validationFailed') ||
+        snapshot.matches('error')
     );
-    const { workerCode, fetchImplementations } = result.context;
+    const { workerCode, fetchImplementations, validationResult, error } =
+      result.context;
     actor.stop();
 
-    const rejection = result.context.error;
-    if (rejection) {
+    // Handle validation failure
+    if (result.matches('validationFailed') && validationResult) {
       return NextResponse.json({
         result: {
-          rejection: rejection,
+          validationFailed: true,
+          validationResult: validationResult,
+        },
+      });
+    }
+
+    // Handle general error
+    if (result.matches('error') || error) {
+      return NextResponse.json({
+        result: {
+          rejection: error || 'An unexpected error occurred',
         },
       });
     }
@@ -102,7 +115,7 @@ export async function POST(request: NextRequest) {
       fetchImplementations[route] = {
         ...implementation,
         fetchImplementationFunction:
-          implementation.fetchImplementationFunction.replace(
+          implementation.fetchImplementationFunction.replaceAll(
             'PLACEHOLDER_WORKER_URL',
             workerUrl
           ),

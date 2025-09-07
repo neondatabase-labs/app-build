@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'App Builder',
-  description: 'Create and preview your application in real-time',
+  title: 'Prompt to API',
+  description:
+    'Turn prompts into serverless APIs powered by your Neon database',
 };
 
 export default function RootLayout({
