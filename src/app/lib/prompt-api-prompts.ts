@@ -1,6 +1,9 @@
+// Constants for API URLs
+export const LOCALHOST_API_URL = "http://localhost:8787"
+
 export const REQUEST_VALIDATION_PROMPT = (
   dbSchema: string,
-  userPrompt: string
+  userPrompt: string,
 ) => `
   <role>
   You are an expert database schema validator. Your task is to analyze user requests against database schemas to determine if the requested functionality is feasible.
@@ -65,7 +68,7 @@ export const REQUEST_VALIDATION_PROMPT = (
   - Order statements logically (tables first, then relationships)
   - Ensure statements can be executed in the order provided
   </sql_generation_guidelines>
-`;
+`
 
 export const SCHEMA_ANALYSIS_SYSTEM_PROMPT = (dbSchema: string) => `
   <role>
@@ -144,7 +147,7 @@ export const SCHEMA_ANALYSIS_SYSTEM_PROMPT = (dbSchema: string) => `
     ]
   }
   </response_format>
-`;
+`
 
 export const HONO_GENERATOR_PROMPT = (schemaAnalysis: string) => `
   <role>
@@ -386,7 +389,7 @@ export const HONO_GENERATOR_PROMPT = (schemaAnalysis: string) => `
   1. Generate SQL statements for required operations using the provided schema
   2. Implement Hono API routes with error handling
   </execution_flow>
-`;
+`
 
 export const FETCH_GENERATOR_PROMPT = (apiRoutes: string) => `
   <role>
@@ -437,8 +440,8 @@ export const FETCH_GENERATOR_PROMPT = (apiRoutes: string) => `
   <fetch_implementation route="GET /posts">
   const getAllPosts = async () => {
       try {
-          // THE BASE URL IS PLACEHOLDER_WORKER_URL
-          const baseURL = 'PLACEHOLDER_WORKER_URL';
+          // THE BASE URL IS ${LOCALHOST_API_URL}
+          const baseURL = '${LOCALHOST_API_URL}';
 
           const response = await fetch(baseURL + '/posts');
           if (!response.ok) {
@@ -470,8 +473,8 @@ export const FETCH_GENERATOR_PROMPT = (apiRoutes: string) => `
   <fetch_implementation route="GET /posts/:id">
   const getPost = async (id) => {
       try {
-          // THE BASE URL IS PLACEHOLDER_WORKER_URL
-          const baseURL = 'PLACEHOLDER_WORKER_URL';
+          // THE BASE URL IS ${LOCALHOST_API_URL}
+          const baseURL = '${LOCALHOST_API_URL}';
 
           const response = await fetch(baseURL + \`/posts/\${id}\`);
           if (!response.ok) {
@@ -503,8 +506,8 @@ export const FETCH_GENERATOR_PROMPT = (apiRoutes: string) => `
   <fetch_implementation route="POST /posts">
   const createPost = async (postData) => {
       try {
-          // THE BASE URL IS PLACEHOLDER_WORKER_URL
-          const baseURL = 'PLACEHOLDER_WORKER_URL';
+          // THE BASE URL IS ${LOCALHOST_API_URL}
+          const baseURL = '${LOCALHOST_API_URL}';
 
           const response = await fetch(baseURL + '/posts', {
               method: 'POST',
@@ -547,8 +550,8 @@ export const FETCH_GENERATOR_PROMPT = (apiRoutes: string) => `
   <fetch_implementation route="PUT /posts/:id">
   const updatePost = async (id, postData) => {
       try {
-          // THE BASE URL IS PLACEHOLDER_WORKER_URL
-          const baseURL = 'PLACEHOLDER_WORKER_URL';
+          // THE BASE URL IS ${LOCALHOST_API_URL}
+          const baseURL = '${LOCALHOST_API_URL}';
 
           const response = await fetch(baseURL + \`/posts/\${id}\`, {
               method: 'PUT',
@@ -590,8 +593,8 @@ export const FETCH_GENERATOR_PROMPT = (apiRoutes: string) => `
   <fetch_implementation route="DELETE /posts/:id">
   const deletePost = async (id) => {
       try {
-          // THE BASE URL IS PLACEHOLDER_WORKER_URL
-          const baseURL = 'PLACEHOLDER_WORKER_URL';
+          // THE BASE URL IS ${LOCALHOST_API_URL}
+          const baseURL = '${LOCALHOST_API_URL}';
 
           const response = await fetch(baseURL + \`/posts/\${id}\`, {
               method: 'DELETE',
@@ -628,4 +631,4 @@ export const FETCH_GENERATOR_PROMPT = (apiRoutes: string) => `
   2. Add comprehensive error handling
   3. Include usage examples that return the response
   </execution_flow>
-`;
+`

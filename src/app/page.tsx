@@ -1,171 +1,171 @@
-'use client';
+"use client"
 
-import { PromptToApiResponse } from '@/app/api/prompt-to-api/route';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react"
+import type { PromptToApiResponse } from "@/app/api/prompt-to-api/route"
 
 const RECOMMENDED_PROMPTS = [
   {
-    label: '📊 User Analytics',
+    label: "📊 User Analytics",
     prompt:
-      'Create an API that shows active users with their total transactions, using a window function to rank them by spend.',
+      "Create an API that shows active users with their total transactions, using a window function to rank them by spend.",
     featured: true,
   },
   {
-    label: '📈 Growth Stats',
+    label: "📈 Growth Stats",
     prompt:
-      'Build a daily cron job that uses date_trunc to aggregate user signups by week and store the results.',
+      "Build a daily cron job that uses date_trunc to aggregate user signups by week and store the results.",
   },
   {
-    label: '🔍 Full-text Search',
+    label: "🔍 Full-text Search",
     prompt:
-      'Create an endpoint that uses PostgreSQL full-text search to find products by description and tags.',
+      "Create an endpoint that uses PostgreSQL full-text search to find products by description and tags.",
   },
   {
-    label: '📅 Metrics Job',
+    label: "📅 Metrics Job",
     prompt:
-      'Create a weekly job that calculates user cohort retention using generate_series and window functions.',
+      "Create a weekly job that calculates user cohort retention using generate_series and window functions.",
   },
-];
+]
 
 const LOADING_MESSAGES = [
-  '🔍 Validating request compatibility with database schema...',
-  '🤔 Analyzing your database query requirements...',
-  '📝 Designing the API schema...',
-  '⚡ Generating Cloudflare Worker code...',
-  '🔒 Adding authentication and rate limiting...',
-  '🚀 Deploying to Cloudflare...',
-];
+  "🔍 Validating request compatibility with database schema...",
+  "🤔 Analyzing your database query requirements...",
+  "📝 Designing the API schema...",
+  "⚡ Generating Cloudflare Worker code...",
+  "🔒 Adding authentication and rate limiting...",
+  "🚀 Deploying to Cloudflare...",
+]
 
 type ActiveTab = {
-  section: 'fetch' | 'worker';
-  route?: string;
-};
+  section: "fetch" | "worker"
+  route?: string
+}
 
 export default function ServerBuilder() {
-  const [promptInput, setPromptInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
-  const [dbConnectionString, setDbConnectionString] = useState('');
+  const [promptInput, setPromptInput] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0)
+  const [dbConnectionString, setDbConnectionString] = useState("")
   const [generatedApi, setGeneratedApi] = useState<{
-    url: string;
+    url: string
     fetchImplementations: Record<
       string,
       {
-        fetchImplementationFunction: string;
-        fetchImplementationUsage: string;
+        fetchImplementationFunction: string
+        fetchImplementationUsage: string
       }
-    >;
-    workerCode: string;
-    rejection: string;
-  } | null>(null);
+    >
+    workerCode: string
+    rejection: string
+  } | null>(null)
   const [validationError, setValidationError] = useState<{
-    isCompatible: boolean;
-    compatibilityIssues: string[];
-    requiredTables: string[];
-    missingTables: string[];
-    requiredColumns: Record<string, string[]>;
-    missingColumns: Record<string, string[]>;
-    suggestions: string[];
-    suggestionsSQL: string[];
-  } | null>(null);
-  const [activeTab, setActiveTab] = useState<ActiveTab>({ section: 'fetch' });
+    isCompatible: boolean
+    compatibilityIssues: string[]
+    requiredTables: string[]
+    missingTables: string[]
+    requiredColumns: Record<string, string[]>
+    missingColumns: Record<string, string[]>
+    suggestions: string[]
+    suggestionsSQL: string[]
+  } | null>(null)
+  const [activeTab, setActiveTab] = useState<ActiveTab>({ section: "fetch" })
   const [apiResponse, setApiResponse] = useState<{
-    message: string;
-    status: number;
-  } | null>(null);
+    message: string
+    status: number
+  } | null>(null)
   const isInputValid =
-    promptInput.trim().length >= 10 && dbConnectionString.trim().length > 0;
+    promptInput.trim().length >= 10 && dbConnectionString.trim().length > 0
 
   useEffect(() => {
     if (!isLoading) {
-      setLoadingMessageIndex(0);
-      return;
+      setLoadingMessageIndex(0)
+      return
     }
 
     const interval = setInterval(() => {
       setLoadingMessageIndex((current) =>
-        current === LOADING_MESSAGES.length - 1 ? current : current + 1
-      );
-    }, 8_000);
+        current === LOADING_MESSAGES.length - 1 ? current : current + 1,
+      )
+    }, 8_000)
 
-    return () => clearInterval(interval);
-  }, [isLoading]);
+    return () => clearInterval(interval)
+  }, [isLoading])
 
   const activeRoute =
-    activeTab.section === 'fetch' &&
+    activeTab.section === "fetch" &&
     !activeTab.route &&
     generatedApi?.fetchImplementations
       ? Object.keys(generatedApi.fetchImplementations)[0]
-      : activeTab.route;
+      : activeTab.route
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isInputValid || isLoading) return;
+    e.preventDefault()
+    if (!isInputValid || isLoading) return
 
     // Reset all states
-    setIsLoading(true);
-    setGeneratedApi(null);
-    setValidationError(null);
-    setApiResponse(null);
-    setActiveTab({ section: 'fetch' });
-    setLoadingMessageIndex(0);
+    setIsLoading(true)
+    setGeneratedApi(null)
+    setValidationError(null)
+    setApiResponse(null)
+    setActiveTab({ section: "fetch" })
+    setLoadingMessageIndex(0)
 
     try {
-      const response = await fetch('/api/prompt-to-api', {
-        method: 'POST',
+      const response = await fetch("/api/prompt-to-api", {
+        method: "POST",
         body: JSON.stringify({
           prompt: promptInput,
           connectionString: dbConnectionString,
         }),
-      });
-      const data = (await response.json()) as PromptToApiResponse;
+      })
+      const data = (await response.json()) as PromptToApiResponse
 
       // Handle validation failure
-      if ('validationFailed' in data.result && data.result.validationFailed) {
-        setValidationError(data.result.validationResult);
-        return;
+      if ("validationFailed" in data.result && data.result.validationFailed) {
+        setValidationError(data.result.validationResult)
+        return
       }
 
-      if ('error' in data.result) {
-        setApiResponse({ message: data.result.error, status: 500 });
-        return;
+      if ("error" in data.result) {
+        setApiResponse({ message: data.result.error, status: 500 })
+        return
       }
 
-      if ('rejection' in data.result) {
-        setApiResponse({ message: data.result.rejection, status: 500 });
-        return;
+      if ("rejection" in data.result) {
+        setApiResponse({ message: data.result.rejection, status: 500 })
+        return
       }
 
       if (
-        'url' in data.result &&
-        'fetchImplementations' in data.result &&
-        'workerCode' in data.result
+        "url" in data.result &&
+        "fetchImplementations" in data.result &&
+        "workerCode" in data.result
       ) {
-        const { url, fetchImplementations, workerCode } = data.result;
+        const { url, fetchImplementations, workerCode } = data.result
         setGeneratedApi({
           url,
           fetchImplementations,
           workerCode,
-          rejection: '',
-        });
+          rejection: "",
+        })
       }
     } catch (error) {
-      console.error('Failed to generate app:', error);
+      console.error("Failed to generate app:", error)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handlePromptClick = (prompt: string) => {
-    setPromptInput(prompt);
-  };
+    setPromptInput(prompt)
+  }
 
   const handleRunApi = async ({
     implementation,
     usageExample,
   }: {
-    implementation: string;
-    usageExample: string;
+    implementation: string
+    usageExample: string
   }) => {
     try {
       const response = await eval(`
@@ -173,18 +173,18 @@ export default function ServerBuilder() {
           ${implementation}
           ${usageExample}
         })()
-      `);
+      `)
 
-      if ('error' in response) {
-        setApiResponse({ message: response, status: response.status });
-        return;
+      if ("error" in response) {
+        setApiResponse({ message: response, status: response.status })
+        return
       } else {
-        setApiResponse({ message: response, status: 200 });
+        setApiResponse({ message: response, status: 200 })
       }
     } catch {
-      setApiResponse({ message: 'Error running API', status: 500 });
+      setApiResponse({ message: "Error running API", status: 500 })
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-[#0F0F0F] text-[#1A1A1A] dark:text-[#FAFAFA]">
@@ -246,7 +246,7 @@ export default function ServerBuilder() {
                   </div>
                   <p className="mt-2 text-xs text-[#666666] dark:text-[#888888]">
                     Your database connection string will be used to create and
-                    manage your database. Get it from{' '}
+                    manage your database. Get it from{" "}
                     <a
                       href="https://console.neon.tech/app/projects"
                       target="_blank"
@@ -288,12 +288,12 @@ export default function ServerBuilder() {
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div
                           className="w-5 h-5 border-[3px] border-white/25 dark:border-black/25 border-t-white dark:border-t-black rounded-full animate-spin"
-                          style={{ animationDuration: '0.6s' }}
+                          style={{ animationDuration: "0.6s" }}
                         />
                       </div>
                     </>
                   ) : (
-                    'Generate API'
+                    "Generate API"
                   )}
                 </button>
 
@@ -383,7 +383,7 @@ export default function ServerBuilder() {
                                   <span className="text-red-500 mr-2">•</span>
                                   <span>{issue}</span>
                                 </li>
-                              )
+                              ),
                             )}
                           </ul>
                         </div>
@@ -399,7 +399,7 @@ export default function ServerBuilder() {
                                   <span className="text-blue-500 mr-2">•</span>
                                   <span>{suggestion}</span>
                                 </li>
-                              )
+                              ),
                             )}
                           </ul>
                         </div>
@@ -413,8 +413,8 @@ export default function ServerBuilder() {
                               <button
                                 onClick={() => {
                                   navigator.clipboard.writeText(
-                                    validationError.suggestionsSQL.join('\n\n')
-                                  );
+                                    validationError.suggestionsSQL.join("\n\n"),
+                                  )
                                   // You could add a toast notification here
                                 }}
                                 className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
@@ -423,8 +423,8 @@ export default function ServerBuilder() {
                               </button>
                               <button
                                 onClick={() => {
-                                  setValidationError(null);
-                                  handleSubmit(new Event('submit') as any);
+                                  setValidationError(null)
+                                  handleSubmit(new Event("submit") as any)
                                 }}
                                 className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
                               >
@@ -434,7 +434,7 @@ export default function ServerBuilder() {
                           </div>
                           <div className="bg-[#F0F0F0] dark:bg-[#1A1A1A] rounded-md p-3">
                             <pre className="text-xs leading-relaxed whitespace-pre-wrap break-words">
-                              {validationError.suggestionsSQL.join('\n\n')}
+                              {validationError.suggestionsSQL.join("\n\n")}
                             </pre>
                           </div>
                         </div>
@@ -483,47 +483,47 @@ export default function ServerBuilder() {
                   <div>
                     <div className="flex border-b border-[#E5E5E5] dark:border-[#333333]">
                       <button
-                        onClick={() => setActiveTab({ section: 'fetch' })}
+                        onClick={() => setActiveTab({ section: "fetch" })}
                         className={`px-4 py-2 text-xs font-medium transition-colors relative whitespace-nowrap ${
-                          activeTab.section === 'fetch'
-                            ? 'text-purple-500 dark:text-purple-400'
-                            : 'text-[#666666] dark:text-[#888888] hover:text-[#333333] dark:hover:text-[#AAAAAA]'
+                          activeTab.section === "fetch"
+                            ? "text-purple-500 dark:text-purple-400"
+                            : "text-[#666666] dark:text-[#888888] hover:text-[#333333] dark:hover:text-[#AAAAAA]"
                         }`}
                       >
                         Fetch
-                        {activeTab.section === 'fetch' && (
+                        {activeTab.section === "fetch" && (
                           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500"></div>
                         )}
                       </button>
                       <button
-                        onClick={() => setActiveTab({ section: 'worker' })}
+                        onClick={() => setActiveTab({ section: "worker" })}
                         className={`px-4 py-2 text-xs font-medium transition-colors relative whitespace-nowrap ${
-                          activeTab.section === 'worker'
-                            ? 'text-purple-500 dark:text-purple-400'
-                            : 'text-[#666666] dark:text-[#888888] hover:text-[#333333] dark:hover:text-[#AAAAAA]'
+                          activeTab.section === "worker"
+                            ? "text-purple-500 dark:text-purple-400"
+                            : "text-[#666666] dark:text-[#888888] hover:text-[#333333] dark:hover:text-[#AAAAAA]"
                         }`}
                       >
                         Worker
-                        {activeTab.section === 'worker' && (
+                        {activeTab.section === "worker" && (
                           <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500"></div>
                         )}
                       </button>
                     </div>
 
-                    {activeTab.section === 'fetch' && (
+                    {activeTab.section === "fetch" && (
                       <div className="flex border-b border-[#E5E5E5] dark:border-[#333333] overflow-x-auto bg-[#FAFAFA] dark:bg-[#1A1A1A]">
                         {Object.keys(
-                          generatedApi?.fetchImplementations || {}
+                          generatedApi?.fetchImplementations || {},
                         ).map((route) => (
                           <button
                             key={route}
                             onClick={() =>
-                              setActiveTab({ section: 'fetch', route })
+                              setActiveTab({ section: "fetch", route })
                             }
                             className={`px-3 py-1.5 text-xs font-medium transition-colors relative whitespace-nowrap ${
                               activeRoute === route
-                                ? 'text-purple-500 dark:text-purple-400'
-                                : 'text-[#666666] dark:text-[#888888] hover:text-[#333333] dark:hover:text-[#AAAAAA]'
+                                ? "text-purple-500 dark:text-purple-400"
+                                : "text-[#666666] dark:text-[#888888] hover:text-[#333333] dark:hover:text-[#AAAAAA]"
                             }`}
                           >
                             {route}
@@ -536,7 +536,7 @@ export default function ServerBuilder() {
                     )}
 
                     <div className="divide-y divide-[#E5E5E5] dark:divide-[#333333]">
-                      {activeTab.section === 'worker' ? (
+                      {activeTab.section === "worker" ? (
                         <div className="p-4">
                           <div className="flex items-center justify-between mb-3">
                             <h3 className="text-xs font-medium text-[#666666] dark:text-[#888888]">
@@ -609,12 +609,12 @@ export default function ServerBuilder() {
                     <span className="text-lg">⚡</span>
                   </div>
                   <p className="text-sm text-[#666666] dark:text-[#888888] mb-1">
-                    {isLoading ? 'Generating API...' : 'No API Generated Yet'}
+                    {isLoading ? "Generating API..." : "No API Generated Yet"}
                   </p>
                   <p className="text-xs text-[#999999] dark:text-[#666666]">
                     {isLoading
-                      ? 'This might take a few seconds'
-                      : 'Enter a prompt to generate your API'}
+                      ? "This might take a few seconds"
+                      : "Enter a prompt to generate your API"}
                   </p>
                 </div>
               )}
@@ -623,5 +623,5 @@ export default function ServerBuilder() {
         </div>
       </div>
     </div>
-  );
+  )
 }

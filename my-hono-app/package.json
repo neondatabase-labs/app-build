@@ -1,14 +1,17 @@
 {
   "name": "my-hono-app",
+  "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "dev:local": "wrangler dev --local --port 8787",
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
     "cloudflare": "^3.5.0",
-    "hono": "^4.6.16"
+    "hono": "^4.6.16",
+    "@cloudflare/workerd-darwin-arm64": "^1.20250913.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "4.20250109.0",

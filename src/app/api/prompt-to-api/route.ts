@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
 import toml from '@iarna/toml';
-import { waitFor } from 'xstate';
+import { type NextRequest, NextResponse } from 'next/server';
+import { createActor, waitFor } from 'xstate';
+import { LOCALHOST_API_URL } from '@/app/lib/prompt-api-prompts';
+import { runHonoCommandInSandbox } from '@/app/lib/sandbox';
 import { apiToPromptMachine } from '../../lib/prompt-to-api-state-machine';
-import { createActor } from 'xstate';
 
 // how to include files in the server bundle: https://github.com/vercel/next.js/discussions/70125
 export async function POST(request: NextRequest) {
@@ -95,7 +96,6 @@ export async function POST(request: NextRequest) {
     const output = execSync('cd my-hono-app && bun run deploy', {
       encoding: 'utf-8',
     });
-
     const urlRegex = /https:\/\/[^\s]+\.workers\.dev/;
     const workerUrl = output.match(urlRegex)?.[0];
 
@@ -110,13 +110,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // replace the PLACEHOLDER_WORKER_URL with the workerUrl
+    const test = await runHonoCommandInSandbox({
+      projectPath: 'my-hono-app',
+      fetchImplementationUsage: ` 
+        ${fetchImplementations['GET /users'].fetchImplementationFunction}
+        ${fetchImplementations['POST /users'].fetchImplementationUsage}
+      `,
+    });
+
+    console.log(test);
+
+    return NextResponse.json(
+      {
+        result: {
+          error: 'just testing',
+        },
+      },
+      { status: 500 }
+    );
+
+    // replace the http://localhost:8787 with the workerUrl
     Object.entries(fetchImplementations).forEach(([route, implementation]) => {
       fetchImplementations[route] = {
         ...implementation,
         fetchImplementationFunction:
           implementation.fetchImplementationFunction.replaceAll(
-            'PLACEHOLDER_WORKER_URL',
+            LOCALHOST_API_URL,
             workerUrl
           ),
       };

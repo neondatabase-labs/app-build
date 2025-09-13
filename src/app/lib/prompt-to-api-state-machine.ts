@@ -1,125 +1,125 @@
-import { assign, fromCallback, fromPromise, setup, log } from 'xstate';
-import { z } from 'zod';
-import { neon } from '@neondatabase/serverless';
-import { anthropic } from '@ai-sdk/anthropic';
+import { anthropic } from "@ai-sdk/anthropic"
+import { neon } from "@neondatabase/serverless"
+import { generateObject } from "ai"
+import { assign, fromCallback, fromPromise, log, setup } from "xstate"
+import { z } from "zod"
 import {
   FETCH_GENERATOR_PROMPT,
   HONO_GENERATOR_PROMPT,
-  SCHEMA_ANALYSIS_SYSTEM_PROMPT,
   REQUEST_VALIDATION_PROMPT,
-} from './prompt-api-prompts';
-import { generateObject } from 'ai';
+  SCHEMA_ANALYSIS_SYSTEM_PROMPT,
+} from "./prompt-api-prompts"
 
 // Define the context type
 interface ApiToPromptContext {
-  connectionString: string;
-  prompt: string;
+  connectionString: string
+  prompt: string
   validationResult: {
-    isCompatible: boolean;
-    compatibilityIssues: string[];
-    requiredTables: string[];
-    missingTables: string[];
-    requiredColumns: Record<string, string[]>;
-    missingColumns: Record<string, string[]>;
-    suggestions: string[];
-    suggestionsSQL: string[];
-  } | null;
-  summarizedSchema: string | null;
-  workerCode: { code: string } | null;
+    isCompatible: boolean
+    compatibilityIssues: string[]
+    requiredTables: string[]
+    missingTables: string[]
+    requiredColumns: Record<string, string[]>
+    missingColumns: Record<string, string[]>
+    suggestions: string[]
+    suggestionsSQL: string[]
+  } | null
+  summarizedSchema: string | null
+  workerCode: { code: string } | null
   fetchImplementations: Record<
     string,
     {
-      fetchImplementationFunction: string;
-      fetchImplementationUsage: string;
+      fetchImplementationFunction: string
+      fetchImplementationUsage: string
     }
-  > | null;
-  error: string | null;
+  > | null
+  error: string | null
 }
 
 // Define the input type
 interface ApiToPromptInput {
-  connectionString: string;
-  prompt: string;
+  connectionString: string
+  prompt: string
 }
 
-const model = anthropic('claude-sonnet-4-20250514');
+const model = anthropic("claude-sonnet-4-20250514")
 
 function getRandomAnalysisPhrase() {
   const phrases = [
-    'Analyzing database schema...',
-    'Mapping relationships...',
-    'Discovering table structures...',
-    'Examining constraints...',
-    'Documenting database architecture...',
-  ];
-  return phrases[Math.floor(Math.random() * phrases.length)]!;
+    "Analyzing database schema...",
+    "Mapping relationships...",
+    "Discovering table structures...",
+    "Examining constraints...",
+    "Documenting database architecture...",
+  ]
+  return phrases[Math.floor(Math.random() * phrases.length)]!
 }
 
 function getRandomHonoGenerationPhrase() {
   const phrases = [
-    'Generating Hono code...',
-    'Crafting API endpoints...',
-    'Building database interfaces...',
-    'Constructing REST routes...',
-    'Preparing Hono code...',
-  ];
-  return phrases[Math.floor(Math.random() * phrases.length)]!;
+    "Generating Hono code...",
+    "Crafting API endpoints...",
+    "Building database interfaces...",
+    "Constructing REST routes...",
+    "Preparing Hono code...",
+  ]
+  return phrases[Math.floor(Math.random() * phrases.length)]!
 }
 
 function getRandomFetchGenerationPhrase() {
   const phrases = [
-    'Generating fetch implementations...',
-    'Crafting fetch implementations...',
-    'Building fetch implementations...',
-    'Constructing fetch implementations...',
-    'Preparing fetch implementations...',
-  ];
-  return phrases[Math.floor(Math.random() * phrases.length)]!;
+    "Generating fetch implementations...",
+    "Crafting fetch implementations...",
+    "Building fetch implementations...",
+    "Constructing fetch implementations...",
+    "Preparing fetch implementations...",
+  ]
+  return phrases[Math.floor(Math.random() * phrases.length)]!
 }
 
 // Loading animation in terminal
 const loader = fromCallback(({ input }: { input: string }) => {
-  const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
-  let i = 0;
+  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+  let i = 0
   const timer = setInterval(() => {
-    process.stdout.write(`\r${frames[i]} ${input}`);
-    i = (i + 1) % frames.length;
-  }, 100);
+    process.stdout.write(`\r${frames[i]} ${input}`)
+    i = (i + 1) % frames.length
+  }, 100)
 
   return () => {
-    clearInterval(timer);
-    process.stdout.write('\n');
-  };
-});
+    clearInterval(timer)
+    process.stdout.write("\n")
+  }
+})
 
 const validationResultSchema = z.object({
   isCompatible: z
     .boolean()
     .describe(
-      'Whether the user request is compatible with the database schema'
+      "Whether the user request is compatible with the database schema",
     ),
   compatibilityIssues: z
     .array(z.string())
-    .describe('List of compatibility issues if any'),
+    .describe("List of compatibility issues if any"),
   requiredTables: z
     .array(z.string())
-    .describe('Tables required for the request'),
+    .describe("Tables required for the request"),
   missingTables: z
     .array(z.string())
-    .describe('Tables that are missing from the schema'),
+    .describe("Tables that are missing from the schema"),
   requiredColumns: z
     .record(z.string(), z.array(z.string()))
-    .describe('Columns required per table'),
+    .describe("Columns required per table"),
   missingColumns: z
     .record(z.string(), z.array(z.string()))
-    .describe('Columns that are missing per table'),
+    .describe("Columns that are missing per table"),
   suggestions: z
     .array(z.string())
-    .describe('Suggestions for fixing compatibility issues'),
+    .describe("Suggestions for fixing compatibility issues"),
   suggestionsSQL: z
     .array(z.string())
-    .describe('SQL statements to fix the compatibility issues'),
-});
+    .describe("SQL statements to fix the compatibility issues"),
+})
 
 const summarizedSchemaSchema = z
   .object({
@@ -132,35 +132,37 @@ const summarizedSchemaSchema = z
             type: z.string(),
             constraints: z.array(z.string()),
             isNullable: z.boolean(),
-          })
+          }),
         ),
         relationships: z.array(
           z.object({
             table: z.string(),
             type: z.string(),
             columns: z.array(z.string()),
-          })
+          }),
         ),
-      })
+      }),
     ),
   })
-  .describe('The analyzed schema details');
+  .describe("The analyzed schema details")
 
 const workerCodeSchema = z.object({
-  code: z.string().describe('The Hono worker code'),
-});
+  code: z.string().describe("The Hono worker code"),
+})
 
-const fetchImplementationsSchema = z.record(
-  z.string().describe('The fetch implementation route ID.'),
-  z.object({
-    fetchImplementationFunction: z
-      .string()
-      .describe('The fetch implementation function'),
-    fetchImplementationUsage: z
-      .string()
-      .describe('The fetch implementation usage example'),
-  })
-).describe(`
+const fetchImplementationsSchema = z
+  .record(
+    z.string().describe("The fetch implementation route ID."),
+    z.object({
+      fetchImplementationFunction: z
+        .string()
+        .describe("The fetch implementation function"),
+      fetchImplementationUsage: z
+        .string()
+        .describe("The fetch implementation usage example"),
+    }),
+  )
+  .describe(`
   The fetch implementations.
 
       Return this in the format:
@@ -182,10 +184,10 @@ const fetchImplementationsSchema = z.record(
           "fetchImplementationUsage": "..."
         }
       }
-`);
+`)
 
 async function getDatabaseSchema(databaseConnectionString: string) {
-  const sql = neon(databaseConnectionString);
+  const sql = neon(databaseConnectionString)
   const result = await sql`
     SELECT 
             t.table_schema,
@@ -227,19 +229,19 @@ async function getDatabaseSchema(databaseConnectionString: string) {
             t.table_schema,
             t.table_name,
             c.column_name;
-  `;
+  `
 
-  return result;
+  return result
 }
 
 async function validateRequest({
   databaseConnectionString,
   userPrompt,
 }: {
-  databaseConnectionString: string;
-  userPrompt: string;
+  databaseConnectionString: string
+  userPrompt: string
 }) {
-  const rawSchema = await getDatabaseSchema(databaseConnectionString);
+  const rawSchema = await getDatabaseSchema(databaseConnectionString)
 
   const { object: validationResult } = await generateObject({
     model: model,
@@ -247,13 +249,13 @@ async function validateRequest({
     schema: validationResultSchema,
     system: REQUEST_VALIDATION_PROMPT(JSON.stringify(rawSchema), userPrompt),
     prompt: `Validate if this user request is compatible with the database schema: "${userPrompt}"`,
-  });
+  })
 
-  return validationResult;
+  return validationResult
 }
 
 async function generateSummarizedSchema(databaseConnectionString: string) {
-  const rawSchema = await getDatabaseSchema(databaseConnectionString);
+  const rawSchema = await getDatabaseSchema(databaseConnectionString)
 
   const { object: summarizedSchema } = await generateObject({
     model: model,
@@ -263,18 +265,18 @@ async function generateSummarizedSchema(databaseConnectionString: string) {
     }),
     system: SCHEMA_ANALYSIS_SYSTEM_PROMPT(JSON.stringify(rawSchema)),
     prompt:
-      'Analyze the database schema and provide a summarized LLM friendly version',
-  });
+      "Analyze the database schema and provide a summarized LLM friendly version",
+  })
 
-  return summarizedSchema;
+  return summarizedSchema
 }
 
 async function generateHonoCode({
   summarizedSchema,
   userPrompt,
 }: {
-  summarizedSchema: string;
-  userPrompt: string;
+  summarizedSchema: string
+  userPrompt: string
 }) {
   const { object: honoCode } = await generateObject({
     model: model,
@@ -284,17 +286,17 @@ async function generateHonoCode({
       Generate the Hono worker code and fetch implementations according to this prompt: ${userPrompt}
                         Don't do more than what is asked in the prompt.
     `,
-  });
+  })
 
-  return honoCode;
+  return honoCode
 }
 
 async function generateFetchImplementations({
   honoCode,
   userPrompt,
 }: {
-  honoCode: string;
-  userPrompt: string;
+  honoCode: string
+  userPrompt: string
 }) {
   const { object: fetchImplementations } = await generateObject({
     model: model,
@@ -304,9 +306,9 @@ async function generateFetchImplementations({
       Generate the fetch implementations according to this prompt: ${userPrompt}
                         Don't do more than what is asked in the prompt.
     `,
-  });
+  })
 
-  return fetchImplementations;
+  return fetchImplementations
 }
 
 export const apiToPromptMachine = setup({
@@ -320,51 +322,51 @@ export const apiToPromptMachine = setup({
       ({
         input,
       }: {
-        input: { connectionString: string; userPrompt: string };
+        input: { connectionString: string; userPrompt: string }
       }) => {
         if (!input.connectionString) {
-          throw new Error('Connection string is required');
+          throw new Error("Connection string is required")
         }
         if (!input.userPrompt) {
-          throw new Error('User prompt is required');
+          throw new Error("User prompt is required")
         }
         return validateRequest({
           databaseConnectionString: input.connectionString,
           userPrompt: input.userPrompt,
-        });
-      }
+        })
+      },
     ),
     generateSummarizedSchema: fromPromise(
       ({ input }: { input: { connectionString: string } }) => {
         if (!input.connectionString) {
-          throw new Error('Connection string is required');
+          throw new Error("Connection string is required")
         }
-        return generateSummarizedSchema(input.connectionString);
-      }
+        return generateSummarizedSchema(input.connectionString)
+      },
     ),
     generateHonoCode: fromPromise(
       ({
         input,
       }: {
-        input: { summarizedSchema: string; userPrompt: string };
+        input: { summarizedSchema: string; userPrompt: string }
       }) => {
         return generateHonoCode({
           summarizedSchema: input.summarizedSchema,
           userPrompt: input.userPrompt,
-        });
-      }
+        })
+      },
     ),
     generateFetchImplementations: fromPromise(
       ({ input }: { input: { honoCode: string; userPrompt: string } }) => {
         return generateFetchImplementations({
           honoCode: input.honoCode,
           userPrompt: input.userPrompt,
-        });
-      }
+        })
+      },
     ),
   },
 }).createMachine({
-  id: 'schemaCode',
+  id: "schemaCode",
   context: ({ input }): ApiToPromptContext => ({
     connectionString: input.connectionString,
     prompt: input.prompt,
@@ -374,47 +376,47 @@ export const apiToPromptMachine = setup({
     fetchImplementations: null,
     error: null,
   }),
-  initial: 'idle',
+  initial: "idle",
   states: {
     idle: {
-      entry: log('Starting request validation and code generation...'),
+      entry: log("Starting request validation and code generation..."),
       on: {
-        start: { target: 'validatingRequest' },
+        start: { target: "validatingRequest" },
       },
     },
     validatingRequest: {
       invoke: [
         {
-          src: 'validateRequest',
+          src: "validateRequest",
           input: ({ context }) => ({
             connectionString: context.connectionString,
             userPrompt: context.prompt,
           }),
           onDone: {
-            target: 'checkValidationResult',
+            target: "checkValidationResult",
             actions: [
               assign({
                 validationResult: ({ event }) => event.output,
               }),
-              log('Request validation complete!'),
+              log("Request validation complete!"),
             ],
           },
           onError: {
-            target: 'error',
+            target: "error",
             actions: [
               assign({
                 error: ({ event }) => (event.error as Error).message,
               }),
               log(
                 ({ event }) =>
-                  `Error validating request: ${(event.error as Error).message}`
+                  `Error validating request: ${(event.error as Error).message}`,
               ),
             ],
           },
         },
         {
-          src: 'loader',
-          input: 'Validating request compatibility...',
+          src: "loader",
+          input: "Validating request compatibility...",
         },
       ],
     },
@@ -423,65 +425,65 @@ export const apiToPromptMachine = setup({
         {
           guard: ({ context }) =>
             context.validationResult?.isCompatible === false,
-          target: 'validationFailed',
+          target: "validationFailed",
         },
         {
-          target: 'analyzingSchema',
+          target: "analyzingSchema",
         },
       ],
     },
     validationFailed: {
       entry: [
-        log(({ context }) => '❌ Request validation failed!'),
-        log(({ context }) => 'Compatibility Issues:'),
+        log(({ context }) => "❌ Request validation failed!"),
+        log(({ context }) => "Compatibility Issues:"),
         log(
           ({ context }) =>
-            context.validationResult?.compatibilityIssues?.join('\n') || ''
+            context.validationResult?.compatibilityIssues?.join("\n") || "",
         ),
-        log(({ context }) => 'Suggestions:'),
+        log(({ context }) => "Suggestions:"),
         log(
           ({ context }) =>
-            context.validationResult?.suggestions?.join('\n') || ''
+            context.validationResult?.suggestions?.join("\n") || "",
         ),
-        log(({ context }) => 'SQL to Fix Issues:'),
+        log(({ context }) => "SQL to Fix Issues:"),
         log(
           ({ context }) =>
-            context.validationResult?.suggestionsSQL?.join('\n\n') || ''
+            context.validationResult?.suggestionsSQL?.join("\n\n") || "",
         ),
       ],
-      type: 'final',
+      type: "final",
     },
     analyzingSchema: {
       invoke: [
         {
-          src: 'generateSummarizedSchema',
+          src: "generateSummarizedSchema",
           input: ({ context }) => ({
             connectionString: context.connectionString,
           }),
           onDone: {
-            target: 'generatingHono',
+            target: "generatingHono",
             actions: [
               assign({
                 summarizedSchema: ({ event }) => JSON.stringify(event.output),
               }),
-              log('Schema analysis complete!'),
+              log("Schema analysis complete!"),
             ],
           },
           onError: {
-            target: 'error',
+            target: "error",
             actions: [
               assign({
                 error: ({ event }) => (event.error as Error).message,
               }),
               log(
                 ({ event }) =>
-                  `Error analyzing schema: ${(event.error as Error).message}`
+                  `Error analyzing schema: ${(event.error as Error).message}`,
               ),
             ],
           },
         },
         {
-          src: 'loader',
+          src: "loader",
           input: getRandomAnalysisPhrase,
         },
       ],
@@ -489,22 +491,22 @@ export const apiToPromptMachine = setup({
     generatingHono: {
       invoke: [
         {
-          src: 'generateHonoCode',
+          src: "generateHonoCode",
           input: ({ context }) => ({
             summarizedSchema: context.summarizedSchema!,
             userPrompt: context.prompt,
           }),
           onDone: {
-            target: 'generatingFetch',
+            target: "generatingFetch",
             actions: [
               assign({
                 workerCode: ({ event }) => event.output,
               }),
-              log('Hono generation complete!'),
+              log("Hono generation complete!"),
             ],
           },
           onError: {
-            target: 'error',
+            target: "error",
             actions: [
               assign({
                 error: ({ event }) => (event.error as Error).message,
@@ -513,13 +515,13 @@ export const apiToPromptMachine = setup({
                 ({ event }) =>
                   `Error generating Hono code: ${
                     (event.error as Error).message
-                  }`
+                  }`,
               ),
             ],
           },
         },
         {
-          src: 'loader',
+          src: "loader",
           input: getRandomHonoGenerationPhrase,
         },
       ],
@@ -527,22 +529,22 @@ export const apiToPromptMachine = setup({
     generatingFetch: {
       invoke: [
         {
-          src: 'generateFetchImplementations',
+          src: "generateFetchImplementations",
           input: ({ context }) => ({
             honoCode: JSON.stringify(context.workerCode),
             userPrompt: context.prompt,
           }),
           onDone: {
-            target: 'complete',
+            target: "complete",
             actions: [
               assign({
                 fetchImplementations: ({ event }) => event.output,
               }),
-              log('Fetch generation complete!'),
+              log("Fetch generation complete!"),
             ],
           },
           onError: {
-            target: 'error',
+            target: "error",
             actions: [
               assign({
                 error: ({ event }) => (event.error as Error).message,
@@ -551,35 +553,35 @@ export const apiToPromptMachine = setup({
                 ({ event }) =>
                   `Error generating fetch implementations: ${
                     (event.error as Error).message
-                  }`
+                  }`,
               ),
             ],
           },
         },
         {
-          src: 'loader',
+          src: "loader",
           input: getRandomFetchGenerationPhrase,
         },
       ],
     },
     complete: {
       entry: [
-        log(({ context }) => '\n✅ Request validation passed!'),
-        log(({ context }) => '\nSchema Analysis:'),
+        log(({ context }) => "\n✅ Request validation passed!"),
+        log(({ context }) => "\nSchema Analysis:"),
         log(({ context }) => JSON.stringify(context.summarizedSchema, null, 2)),
-        log(({ context }) => '\nGenerated Hono Code:'),
+        log(({ context }) => "\nGenerated Hono Code:"),
         log(({ context }) => JSON.stringify(context.workerCode, null, 2)),
-        log(({ context }) => '\nGenerated Fetch Implementations:'),
+        log(({ context }) => "\nGenerated Fetch Implementations:"),
         log(({ context }) =>
-          JSON.stringify(context.fetchImplementations, null, 2)
+          JSON.stringify(context.fetchImplementations, null, 2),
         ),
       ],
-      type: 'final',
+      type: "final",
     },
     error: {
       entry: log(({ context }) => `\nError: ${context.error}`),
-      type: 'final',
+      type: "final",
     },
   },
   exit: () => {},
-});
+})
