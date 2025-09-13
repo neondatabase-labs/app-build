@@ -1,0 +1,35 @@
+---
+description: Specific patterns for prompt-to-API generation functionality
+globs: ["src/app/**/*.ts", "src/app/**/*.tsx"]
+alwaysApply: false
+---
+
+# Prompt-to-API Generation Patterns
+
+## Core Functionality
+- Use proper state machines for the generation flow
+- Implement proper loading states with rotating messages
+- Handle database schema validation
+- Generate proper Cloudflare Worker code
+- Implement proper error handling for generation failures
+
+## AI Integration
+- Use AI SDK for Anthropic integration
+- Implement proper prompt engineering
+- Handle AI response validation
+- Implement proper error handling for AI failures
+- Use proper streaming for long responses
+
+## Database Schema Validation
+- Validate database connection strings
+- Check schema compatibility with generated queries
+- Handle database errors gracefully
+- Implement proper query validation
+- Use proper transaction patterns
+
+## Generated API Structure
+- Include proper TypeScript types
+- Implement proper error handling
+- Add authentication and rate limiting
+- Include proper logging
+- Follow RESTful API patterns

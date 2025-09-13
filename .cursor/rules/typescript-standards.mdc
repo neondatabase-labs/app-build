@@ -1,0 +1,46 @@
+---
+description: TypeScript coding standards and best practices
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# TypeScript Standards
+
+## Type Safety
+- Use strict TypeScript with proper type annotations
+- Prefer explicit types over `any`
+- Use type aliases over interfaces
+- Use proper type definitions for API responses and state
+- Leverage TypeScript's path mapping (`@/*` for `./src/*`)
+- Use proper generic types for reusable components
+
+## Code Patterns
+```typescript
+// Preferred component structure
+type ComponentProps {
+  // Define props with proper types
+}
+
+export default function Component({ prop1, prop2 }: ComponentProps) {
+  // State and hooks at the top
+  const [state, setState] = useState<Type>();
+  
+  // Event handlers
+  const handleEvent = useCallback(() => {
+    // Implementation
+  }, [dependencies]);
+  
+  // Render
+  return (
+    <div>
+      {/* JSX */}
+    </div>
+  );
+}
+```
+
+## Common Patterns to Avoid
+- Don't use `any` types
+- Don't ignore TypeScript errors
+- Don't create overly complex components
+- Don't ignore error handling

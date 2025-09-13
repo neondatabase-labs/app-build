@@ -1,0 +1,33 @@
+---
+description: Next.js 15 App Router patterns and React best practices
+globs: ["src/app/**/*.tsx", "src/app/**/*.ts"]
+alwaysApply: true
+---
+
+# Next.js & React Patterns
+
+## Component Structure
+- Use functional components with hooks
+- Prefer `'use client'` directive only when necessary
+- Use proper Next.js App Router patterns
+- Implement proper error boundaries and loading states
+- Use proper TypeScript types for props and state
+
+## File Organization
+- `src/app/` - Next.js App Router pages and layouts
+- `src/app/api/` - API routes
+- `src/app/lib/` - Shared utilities and state machines
+
+## Naming Conventions
+- Use kebab-case for file names
+- Use PascalCase for React components
+- Use camelCase for functions and variables
+- Use UPPER_CASE for constants
+- Use descriptive names that explain purpose
+
+## Performance
+- Use React.memo for expensive components
+- Implement proper loading states
+- Use dynamic imports for code splitting
+- Optimize images and assets
+- Use proper caching strategies

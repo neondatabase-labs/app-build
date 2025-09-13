@@ -1,0 +1,35 @@
+---
+description: Cloudflare Workers development with Hono framework
+globs: ["my-hono-app/**/*.ts"]
+alwaysApply: true
+---
+
+# Cloudflare Workers with Hono
+
+## Hono Framework Patterns
+- Follow Hono framework patterns
+- Use proper TypeScript types for Cloudflare bindings
+- Implement proper error handling and logging
+- Use environment variables for configuration
+- Follow Cloudflare Workers best practices
+
+## Project-Specific Requirements
+- Generate proper Hono-based workers
+- Implement proper authentication
+- Use proper environment variable handling
+- Implement proper error responses
+- Follow Cloudflare Workers best practices
+
+## Database Integration
+- Use proper connection pooling
+- Implement proper query validation
+- Handle database errors gracefully
+- Use proper transaction patterns
+- Implement proper migration strategies
+
+## Generated Worker Structure
+- Include proper imports and dependencies
+- Implement proper route handlers
+- Add authentication middleware
+- Include proper error handling
+- Use environment variables for configuration

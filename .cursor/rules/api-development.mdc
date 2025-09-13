@@ -1,0 +1,48 @@
+---
+description: API development patterns for Next.js API routes
+globs: ["src/app/api/**/*.ts"]
+alwaysApply: true
+---
+
+# API Development Patterns
+
+## API Route Structure
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const RequestSchema = z.object({
+  // Define request validation
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const validatedData = RequestSchema.parse(body);
+    
+    // Process request
+    const result = await processRequest(validatedData);
+    
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Error message' },
+      { status: 400 }
+    );
+  }
+}
+```
+
+## Best Practices
+- Use proper HTTP status codes
+- Implement proper error handling
+- Use Zod for request/response validation
+- Follow RESTful API patterns
+- Use proper TypeScript types for API responses
+
+## Security
+- Validate all inputs with Zod
+- Use proper authentication patterns
+- Sanitize user inputs
+- Implement proper CORS policies
+- Use environment variables for secrets

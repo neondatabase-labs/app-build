@@ -1,0 +1,39 @@
+---
+description: XState patterns for complex state management
+globs: ["src/app/lib/**/*.ts"]
+alwaysApply: true
+---
+
+# State Management with XState
+
+## State Machine Patterns
+```typescript
+import { createMachine, assign } from 'xstate';
+
+export const machine = createMachine({
+  id: 'machineName',
+  initial: 'initialState',
+  context: {
+    // Define context type
+  },
+  states: {
+    // Define states
+  },
+  on: {
+    // Define events
+  }
+});
+```
+
+## Best Practices
+- Use XState for complex state management
+- Keep component state local when possible
+- Use proper state machine patterns for API generation flow
+- Implement proper loading and error states
+- Define clear state transitions and events
+
+## Project-Specific Patterns
+- Use state machines for the prompt-to-API generation flow
+- Implement proper loading states with rotating messages
+- Handle database schema validation states
+- Manage Cloudflare Worker generation states
